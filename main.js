@@ -4,6 +4,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+//-------------------------
+let mixer; // We create this variable out here so the whole script can see it
+const clock = new THREE.Clock();
 
 // --- 1. THE SCENE SETUP ---
 // The scene is the space, the camera is your eyes, and the renderer draws it.
@@ -41,6 +44,22 @@ const loader = new GLTFLoader();
 loader.load('/robot_web.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
+
+// 1. Create the Mixer for this specific model
+    mixer = new THREE.AnimationMixer(model);
+
+    // 2. Look at all the animations (NLA tracks) in the file
+    // gltf.animations is an array of all your tracks from Blender
+    gltf.animations.forEach((clip) => {
+        mixer.clipAction(clip).play(); // This tells every animation to start playing
+    });
+
+    //If you have multiple NLA tracks
+    //(e.g., one for "Idle" and one for "Walking") and you play them all at once using the code above, they might look messy.
+    //If you only want one specific animation to play, replace the ".forEach" (above this) part with:
+    //mixer.clipAction(gltf.animations[0]).play();
+    //(This plays only the first animation track found in the file.)
+
     
     // Optional: Center the model automatically
     const box = new THREE.Box3().setFromObject(model);
@@ -69,13 +88,18 @@ composer.addPass(bloomPass);
 // This runs 60 times per second to keep the image updated.
 function animate() {
     requestAnimationFrame(animate);
-    
-    controls.update(); // Required for smooth damping
-    
-    // Instead of renderer.render, we use composer.render for the effects
+
+    // Calculate how much time has passed since the last frame
+    const delta = clock.getDelta(); 
+
+    // If the mixer exists, tell it to move the animation forward by that time
+    if (mixer) {
+        mixer.update(delta);
+    }
+
+    controls.update();
     composer.render();
 }
-
 // Handle window resizing (so it doesn't look stretched)
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
