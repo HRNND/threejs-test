@@ -38,7 +38,7 @@ controls.screenSpacePanning = true; // Allows vertical/horizontal panning
 // --- 4. IMPORTING THE 3D MODEL ---
 // Replace 'public/model.glb' with your actual file path.
 const loader = new GLTFLoader();
-loader.load('/model.glb', function (gltf) {
+loader.load('/idcard.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
     
