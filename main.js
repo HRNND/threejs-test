@@ -39,7 +39,7 @@ controls.enableDamping = true;
 const loader = new GLTFLoader();
 
 // Use the filename exactly as it appears in GitHub
-loader.load('bot_follow_cursor_a-1.glb', function (gltf) {
+loader.load('bot_follow_cursor_a-2.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
