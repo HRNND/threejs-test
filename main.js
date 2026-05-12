@@ -6,11 +6,11 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 // --- 1. GLOBAL VARIABLES ---
-let mixer, robot, neckBone;
-let actions = {};
+let mixer, neckBone;
+const actions = {};
 const clock = new THREE.Clock();
 const mouse = new THREE.Vector2();
-const rotationLimit = 0.6; 
+const movementRange = 1.5; 
 
 // --- 2. SCENE SETUP ---
 const scene = new THREE.Scene();
@@ -19,7 +19,7 @@ camera.position.set(0, 2, 5);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
 // --- 3. EVENT LISTENERS ---
@@ -36,12 +36,10 @@ window.addEventListener('resize', () => {
 });
 
 // --- 4. LIGHTING ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-scene.add(ambientLight);
-
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(5, 5, 5);
-scene.add(directionalLight);
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(5, 5, 5);
+scene.add(dirLight);
 
 // --- 5. CONTROLS ---
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -54,44 +52,34 @@ loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
+    // Find the IK Target Bone
     neckBone = model.getObjectByName('Bone'); 
 
     if (neckBone) {
-        // We use .clone() to ensure 'homePos' is a STATIC snapshot 
-        // that doesn't change when the bone moves.
+        // SAFETY: Capture the position at the exact moment of loading
         neckBone.userData.homePos = neckBone.position.clone();
+        console.log("IK Bone Ready");
     }
 
-    // Animation Setup
+    // Animation Mixer
     mixer = new THREE.AnimationMixer(model);
     gltf.animations.forEach((clip) => {
         actions[clip.name] = mixer.clipAction(clip);
     });
 
-    if (actions['Running']) {
-        actions['Running'].play();
-    }
+    if (actions['Running']) actions['Running'].play();
 
-    // Centering
+    // Center Model
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     model.position.sub(center);
 
-    console.log("Model loaded successfully!");
-
-}, undefined, function (error) {
-    console.error('Error loading model:', error);
-});
+}, undefined, (error) => console.error(error));
 
 // --- 7. POST-PROCESSING ---
 const composer = new EffectComposer(renderer);
-const renderPass = new RenderPass(scene, camera);
-composer.addPass(renderPass);
-
-const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight), 
-    0.2, 0.4, 0.85
-);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.4, 0.85);
 composer.addPass(bloomPass);
 
 // --- 8. MAIN ANIMATION LOOP ---
@@ -99,23 +87,27 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    // 1. Update animations (This moves the bone to the 'Run' pose)
+    // 1. Update the NLA (Running) animation
     if (mixer) mixer.update(delta);
 
-    // 2. The Absolute Override
-    if (neckBone && neckBone.userData.homePos) {
+    // 2. THE SAFETY GUARD:
+    // Only run the math if neckBone exists AND has a homePos.
+    // This prevents the "White Screen" crash during loading.
+    if (neckBone && neckBone.userData && neckBone.userData.homePos) {
         const home = neckBone.userData.homePos;
-        const range = 1.5; 
 
-        // We use '=' to set the EXACT position, not '+=' 
-        // We are adding the mouse offset to the ORIGINAL home position only.
-        const targetX = home.x + (mouse.x * range);
-        const targetY = home.y + (mouse.y * range);
+        // Use absolute positioning relative to the 'home' snapshot
+        // This stops the numbers from "adding up like crazy"
+        const targetX = home.x + (mouse.x * movementRange);
+        const targetY = home.y + (mouse.y * movementRange);
 
+        // Apply the new position to the IK target
         neckBone.position.set(targetX, targetY, home.z);
     }
 
     controls.update();
     composer.render();
 }
-});
+
+// Start the loop
+animate();
