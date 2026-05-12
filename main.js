@@ -72,7 +72,7 @@ if (actions['Running']) {
     
     // THE FIX: Use 'currentAction' here, not 'action'
     // This trims the tiny gap at the end of the loop
-    currentAction.setDuration(currentAction.getClip().duration - 0.01);
+    currentAction.setDuration(currentAction.getClip().duration - 1);
     
     currentAction.play();
 } else {
