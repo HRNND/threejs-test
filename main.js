@@ -96,8 +96,8 @@ loader.load('/bot_running_a_1_nla_export_fix.glb', function (gltf) {
         currentAction.play();
     }
 
-}, undefined, function (error) 
-    console.error('Error loading model:', error);
+//}, undefined, function (error) 
+   // console.error('Error loading model:', error);
 });
 
     // Setup Animations
