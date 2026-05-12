@@ -30,6 +30,7 @@ window.addEventListener('mousemove', (event) => {
     // This converts mouse position to -1 to +1
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+});
 
 
 // --- 3. LIGHTING ---
@@ -143,6 +144,12 @@ function animate() {
     const delta = clock.getDelta();
 
     if (mixer) mixer.update(delta);
+    
+    // --- ADD THE BONE OVERRIDE HERE ---
+    if (neckBone) {
+        neckBone.rotation.y = mouse.x * rotationLimit; 
+        neckBone.rotation.x = -mouse.y * (rotationLimit * 0.5); 
+    }
     
     controls.update();
     composer.render();
