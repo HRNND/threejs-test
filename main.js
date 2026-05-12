@@ -118,3 +118,4 @@ function animate() {
     controls.update();
     composer.render();
 }
+});
