@@ -10,6 +10,8 @@ let mixer, robot, track, obstacle, lighting;
 let actions = {};
 let currentAction;
 const clock = new THREE.Clock();
+let neckBone; // Variable to store our specific bone
+const rotationLimit = 0.6; // How far the bone can turn (approx 35 degrees)
 
 // --- 2. SCENE SETUP ---
 const scene = new THREE.Scene();
@@ -37,7 +39,7 @@ controls.enableDamping = true;
 const loader = new GLTFLoader();
 
 // Use the filename exactly as it appears in GitHub
-loader.load('bot_running_a_1_nla_export_fix.glb', function (gltf) {
+loader.load('bot_follow_cursor_a-1.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
@@ -46,6 +48,10 @@ loader.load('bot_running_a_1_nla_export_fix.glb', function (gltf) {
     track = model.getObjectByName('Track');
     obstacle = model.getObjectByName('Obstacle');
 
+// --- BONE SELECTION ---
+// This is where you target the specific part of the skeleton
+neckBone = model.getObjectByName('Bone'); // <--- CHANGE BONE NAME HERE
+    
     // --- THE EMISSIVE DIMMER SWITCH ---
 robot.traverse((child) => {
     if (child.isMesh && child.material) {
@@ -68,6 +74,31 @@ robot.traverse((child) => {
         console.warn("Animation 'running' not found. Check your NLA names!");
     }
 
+// animation bone
+    function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+
+    // 1. The Mixer runs first. It sets the bone to the 'Run' position.
+    if (mixer) mixer.update(delta);
+
+    // 2. THE OVERRIDE: We manually adjust the bone AFTER the mixer.
+    if (neckBone) {
+        // We map mouse position to rotation using a simple formula:
+        // rotation = mouseCoord * limit
+        
+        // Horizontal look (Left/Right)
+        neckBone.rotation.y = mouse.x * rotationLimit; 
+
+        // Vertical look (Up/Down)
+        // We use negative mouse.y because moving mouse UP usually means looking UP
+        neckBone.rotation.x = -mouse.y * (rotationLimit * 0.5); 
+    }
+
+    controls.update();
+    composer.render(); // 3. The final result is drawn to the screen
+}
+    
     // Centering the model
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
