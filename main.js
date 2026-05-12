@@ -46,6 +46,13 @@ loader.load('bot_running_a_1_nla_export_fix.glb', function (gltf) {
     track = model.getObjectByName('Track');
     obstacle = model.getObjectByName('Obstacle');
 
+    // --- THE EMISSIVE DIMMER SWITCH ---
+robot.traverse((child) => {
+    if (child.isMesh && child.material) {
+        // 0.0 is off, 1.0 is standard, 0.2 is very dim/subtle
+        child.material.emissiveIntensity = 0.2; 
+    }
+});
     // Animation Setup
     mixer = new THREE.AnimationMixer(model);
 
@@ -54,11 +61,11 @@ loader.load('bot_running_a_1_nla_export_fix.glb', function (gltf) {
     });
 
     // START ANIMATION: Change 'Run' to your exact NLA track name
-    if (actions['Run']) {
-        currentAction = actions['Run'];
+    if (actions['running']) {
+        currentAction = actions['running'];
         currentAction.play();
     } else {
-        console.warn("Animation 'Run' not found. Check your NLA names!");
+        console.warn("Animation 'running' not found. Check your NLA names!");
     }
 
     // Centering the model
@@ -79,7 +86,8 @@ composer.addPass(renderPass);
 
 const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight), 
-    0.5, 0.4, 0.85
+    0.2, 0.4, 0.85
+    // ATTENTION! 3 values above are accordingly (strength, radius, threshold)
 );
 composer.addPass(bloomPass);
 
