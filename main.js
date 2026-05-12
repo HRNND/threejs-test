@@ -6,13 +6,12 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 // --- 1. GLOBAL VARIABLES ---
-let mixer, robot, track, obstacle, lighting;
+let mixer, robot, neckBone;
 let actions = {};
 let currentAction;
 const clock = new THREE.Clock();
-let neckBone; // Variable to store our specific bone
 const mouse = new THREE.Vector2();
-const rotationLimit = 0.6; // How far the bone can turn (approx 35 degrees)
+const rotationLimit = 0.6; // Max rotation in radians (approx 34 degrees)
 
 // --- 2. SCENE SETUP ---
 const scene = new THREE.Scene();
@@ -24,16 +23,23 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
+// --- 3. EVENT LISTENERS ---
 
-////- MOUSE LISTENER
+// Mouse Movement Tracker
 window.addEventListener('mousemove', (event) => {
-    // This converts mouse position to -1 to +1
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
 
+// Window Resize Handler
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+});
 
-// --- 3. LIGHTING ---
+// --- 4. LIGHTING ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 scene.add(ambientLight);
 
@@ -41,26 +47,22 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
 
-// --- 4. CONTROLS ---
+// --- 5. CONTROLS ---
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- 5. THE LOADER (Importing the Robot) ---
+// --- 6. THE LOADER ---
 const loader = new GLTFLoader();
 
 loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
-    // 1. Identify parts by Blender names
+    // Identify main parts
     robot = model.getObjectByName('Robot');
-    track = model.getObjectByName('Track');
-    obstacle = model.getObjectByName('Obstacle');
-
-    // 2. Bone Selection (Targeting the part to follow the cursor)
     neckBone = model.getObjectByName('Bone'); 
-    
-    // 3. Emissive Control (Adjusting the glow intensity)
+
+    // Adjust Glow Intensity (Emissive)
     if (robot) {
         robot.traverse((child) => {
             if (child.isMesh && child.material) {
@@ -69,125 +71,65 @@ loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
         });
     }
 
-    // 4. Animation Setup
+    // Animation Mixer Setup
     mixer = new THREE.AnimationMixer(model);
-
-    // Store all animations in our actions dictionary
     gltf.animations.forEach((clip) => {
         actions[clip.name] = mixer.clipAction(clip);
     });
 
-    // 5. Start the 'Running' Animation
+    // Start Running Animation
     if (actions['Running']) {
         currentAction = actions['Running'];
         currentAction.play();
-    } else {
-        console.warn("Animation 'Running' not found. Check your NLA names in Blender!");
     }
 
-    // 6. Automatic Centering
+    // Center the model in the scene
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     model.position.sub(center);
 
-    console.log("Model loaded successfully and Bone identified!");
+    console.log("Robot and Bone ('" + (neckBone ? neckBone.name : "Not Found") + "') loaded!");
 
 }, undefined, function (error) {
     console.error('Error loading model:', error);
 });
 
-// 1. Animation Setup
-mixer = new THREE.AnimationMixer(model);
-
-gltf.animations.forEach((clip) => {
-    actions[clip.name] = mixer.clipAction(clip);
-});
-
-// 2. START ANIMATION
-if (actions['Running']) {
-    currentAction = actions['Running'];
-    
-    // THE FIX: Use 'currentAction' here, not 'action'
-    // This trims the tiny gap at the end of the loop
-   // currentAction.setDuration(currentAction.getClip().duration - 1);
-    
-    currentAction.play();
-} else {
-    console.warn("Animation 'Running' not found. Check your NLA names!");
-}
-
-    
-// animation bone
-    function animate() {
-    requestAnimationFrame(animate);
-    const delta = clock.getDelta();
-
-    // 1. The Mixer runs first. It sets the bone to the 'Run' position.
-    if (mixer) mixer.update(delta);
-
-    // 2. THE OVERRIDE: We manually adjust the bone AFTER the mixer.
-    if (neckBone) {
-        // We map mouse position to rotation using a simple formula:
-        // rotation = mouseCoord * limit
-        
-        // Horizontal look (Left/Right)
-        neckBone.rotation.y = mouse.x * rotationLimit; 
-
-        // Vertical look (Up/Down)
-        // We use negative mouse.y because moving mouse UP usually means looking UP
-        neckBone.rotation.x = -mouse.y * (rotationLimit * 0.5); 
-    }
-
-    controls.update();
-    composer.render(); // 3. The final result is drawn to the screen
-}
-    
-    // Centering the model
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    model.position.sub(center);
-
-    console.log("Model loaded successfully!");
-
-}, undefined, function (error) {
-    console.error('Error loading model:', error);
-});
-
-// --- 6. POST-PROCESSING ---
+// --- 7. POST-PROCESSING (Bloom/Glow) ---
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
 const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight), 
-    0.2, 0.4, 0.85
-    // ATTENTION! 3 values above are accordingly (strength, radius, threshold)
+    0.2, // Strength
+    0.4, // Radius
+    0.85 // Threshold
 );
 composer.addPass(bloomPass);
 
-// --- 7. ANIMATION LOOP ---
+// --- 8. MAIN ANIMATION LOOP ---
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
+    // 1. Update the NLA animations first
     if (mixer) mixer.update(delta);
-    
-    // --- ADD THE BONE OVERRIDE HERE ---
+
+    // 2. Override the bone rotation to follow the cursor
+    // This happens AFTER the mixer so the mouse has the "last word"
     if (neckBone) {
-        neckBone.rotation.y = mouse.x * rotationLimit; 
-        neckBone.rotation.x = -mouse.y * (rotationLimit * 0.5); 
+        const targetRotationX = -mouse.y * (rotationLimit * 0.5);
+        const targetRotationY = mouse.x * rotationLimit;
+
+        // We use Quaternions to ensure the rotation is applied 
+        // even while the AnimationMixer is active.
+        const euler = new THREE.Euler(targetRotationX, targetRotationY, 0, 'XYZ');
+        neckBone.quaternion.setFromEuler(euler);
     }
-    
+
     controls.update();
     composer.render();
 }
 
-// Window Resize
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
-});
-
+// Start the loop
 animate();
