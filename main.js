@@ -50,7 +50,7 @@ loader.load('bot_running_a_1_nla_export_fix.glb', function (gltf) {
 robot.traverse((child) => {
     if (child.isMesh && child.material) {
         // 0.0 is off, 1.0 is standard, 0.2 is very dim/subtle
-        child.material.emissiveIntensity = 0.2; 
+        child.material.emissiveIntensity = 3; 
     }
 });
     // Animation Setup
