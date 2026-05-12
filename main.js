@@ -48,7 +48,7 @@ controls.enableDamping = true;
 // --- 6. THE LOADER ---
 const loader = new GLTFLoader();
 
-loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
+loader.load('bot_follow_cursor_a-9.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
