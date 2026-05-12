@@ -47,7 +47,7 @@ let currentAction;
 // --- 4. IMPORTING THE 3D MODEL ---
 const loader = new GLTFLoader();
 
-loader.load('/bot_running_a_1_nla_export_fix.glb', function (gltf) {
+loader.load('/bot_running_a_1_nla_export_separate-1b', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
