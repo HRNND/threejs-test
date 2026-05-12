@@ -47,9 +47,7 @@ let currentAction;
 // --- 4. IMPORTING THE 3D MODEL ---
 // Define these at the very top of your main.js (outside the loader) 
 // so other functions (like animate) can see them.
-let robot, track, obstacle, lighting, mixer;
-let actions = {};
-let currentAction;
+
 
 // --- 4. IMPORTING THE 3D MODEL ---
 const loader = new GLTFLoader();
