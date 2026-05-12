@@ -39,7 +39,7 @@ controls.enableDamping = true;
 const loader = new GLTFLoader();
 
 // Use the filename exactly as it appears in GitHub
-loader.load('bot_follow_cursor_a-3.glb', function (gltf) {
+loader.load('bot_follow_cursor_a-2.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
@@ -59,21 +59,27 @@ robot.traverse((child) => {
         child.material.emissiveIntensity = 3; 
     }
 });
-    // Animation Setup
-    mixer = new THREE.AnimationMixer(model);
+// 1. Animation Setup
+mixer = new THREE.AnimationMixer(model);
 
-    gltf.animations.forEach((clip) => {
-        actions[clip.name] = mixer.clipAction(clip);
-    });
+gltf.animations.forEach((clip) => {
+    actions[clip.name] = mixer.clipAction(clip);
+});
 
-    // START ANIMATION: Change 'Run' to your exact NLA track name
-    if (actions['Running']) {
-        currentAction = actions['Running'];
-        currentAction.play();
-    } else {
-        console.warn("Animation 'Running' not found. Check your NLA names!");
-    }
+// 2. START ANIMATION
+if (actions['Running']) {
+    currentAction = actions['Running'];
+    
+    // THE FIX: Use 'currentAction' here, not 'action'
+    // This trims the tiny gap at the end of the loop
+    currentAction.setDuration(currentAction.getClip().duration - 0.01);
+    
+    currentAction.play();
+} else {
+    console.warn("Animation 'Running' not found. Check your NLA names!");
+}
 
+    
 // animation bone
     function animate() {
     requestAnimationFrame(animate);
