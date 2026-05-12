@@ -11,6 +11,7 @@ let actions = {};
 let currentAction;
 const clock = new THREE.Clock();
 let neckBone; // Variable to store our specific bone
+const mouse = new THREE.Vector2();
 const rotationLimit = 0.6; // How far the bone can turn (approx 35 degrees)
 
 // --- 2. SCENE SETUP ---
@@ -22,6 +23,14 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
+
+
+////- MOUSE LISTENER
+window.addEventListener('mousemove', (event) => {
+    // This converts mouse position to -1 to +1
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
 
 // --- 3. LIGHTING ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
