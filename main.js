@@ -10,7 +10,7 @@ let mixer, neckBone;
 const actions = {};
 const clock = new THREE.Clock();
 const mouse = new THREE.Vector2();
-const movementRange = 1.5; 
+const movementRange = 20; 
 
 // --- 2. SCENE SETUP ---
 const scene = new THREE.Scene();
