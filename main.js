@@ -4,170 +4,97 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-//-------------------------
-let mixer; // We create this variable out here so the whole script can see it
+
+// --- 1. GLOBAL VARIABLES ---
+let mixer, robot, track, obstacle, lighting;
+let actions = {};
+let currentAction;
 const clock = new THREE.Clock();
-//-----------------------------------------------------------------------------------------------------------------
-// --- 1. THE SCENE SETUP ---
-// The scene is the space, the camera is your eyes, and the renderer draws it.
+
+// --- 2. SCENE SETUP ---
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 2, 5); // Position the camera slightly up and back
+camera.position.set(0, 2, 5);
 
-const renderer = new THREE.WebGLRenderer({ 
-    antialias: true,    // Makes edges smooth
-    alpha: true         // Makes background transparent for Framer
-});
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
-//-----------------------------------------------------------------------------------------------------------------
-// --- 2. LIGHTING ---
-// Without lights, your model will be pitch black.
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Soft overall light
+
+// --- 3. LIGHTING ---
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Like the sun
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
-//-----------------------------------------------------------------------------------------------------------------
-// --- 3. INTERACTION (CONTROLS) ---
-// This allows you to rotate (left click) and pan (right click) with the mouse.
+
+// --- 4. CONTROLS ---
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; // Adds a smooth "weight" to the movement
-controls.dampingFactor = 0.05;
-controls.screenSpacePanning = true; // Allows vertical/horizontal panning
+controls.enableDamping = true;
 
-// Define these at the very top of your main.js (outside the loader) 
-// so other functions (like animate) can see them.
-let robot, track, obstacle, lighting;
-let actions = {};
-let currentAction;
-//-----------------------------------------------------------------------------------------------------------------
-// --- 4. IMPORTING THE 3D MODEL ---
-// Define these at the very top of your main.js (outside the loader) 
-// so other functions (like animate) can see them.
-
-
-// --- 4. IMPORTING THE 3D MODEL ---
+// --- 5. THE LOADER (Importing the Robot) ---
 const loader = new GLTFLoader();
 
-loader.load('/bot_running_a_1_nla_export_fix.glb', function (gltf) {
+// Use the filename exactly as it appears in GitHub
+loader.load('bot_running_a_1_nla_export_fix.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
-    // 1. Separate the objects by their Blender names
-    // Note: Make sure 'Robot', 'Track', etc., match your Blender Outliner exactly!
+    // Identify parts by Blender names
     robot = model.getObjectByName('Robot');
     track = model.getObjectByName('Track');
     obstacle = model.getObjectByName('Obstacle');
-    lighting = model.getObjectByName('Lighting');
 
-    // 2. Setup the Animation Mixer
-    // We attach the mixer to the 'model' or 'robot'
+    // Animation Setup
     mixer = new THREE.AnimationMixer(model);
 
-    // 3. Store all NLA tracks into the 'actions' dictionary
     gltf.animations.forEach((clip) => {
-        const action = mixer.clipAction(clip);
-        actions[clip.name] = action;
+        actions[clip.name] = mixer.clipAction(clip);
     });
 
-    // 4. Start the default animation
-    if (actions['Running']) {
-        currentAction = actions['running'];
-        currentAction.play();
-    }
-
-}, undefined, function (error) {
-    console.error('Error loading model:', error);
-});
-
-//check if it's separated
-    if (robot) {
-    console.log("Robot found!");
-} else {
-    console.warn("Robot not found! Check the name in Blender.");
-}
-//-----------------------------------------------------------------------------------------------------------------
-    // 4. Start the default animation
+    // START ANIMATION: Change 'Run' to your exact NLA track name
     if (actions['Run']) {
         currentAction = actions['Run'];
         currentAction.play();
+    } else {
+        console.warn("Animation 'Run' not found. Check your NLA names!");
     }
 
-, undefined, function (error) 
-    console.error('Error loading model:', error);
-);
-
-    // Setup Animations
-    mixer = new THREE.AnimationMixer(robot);
-    gltf.animations.forEach((clip) => {
-        const action = mixer.clipAction(clip);
-        actions[clip.name] = action; // Store them: actions['Run'], actions['Jump']
-    });
-
-    // Start the game state
-    actions['Run'].play();
-});
-
-    
-// (ADDITIONAL) Create the Mixer for this specific model
-    mixer = new THREE.AnimationMixer(model);
-
-    // 2. Look at all the animations (NLA tracks) in the file
-    // gltf.animations is an array of all your tracks from Blender
-    gltf.animations.forEach((clip) => {
-        mixer.clipAction(clip).play(); // This tells every animation to start playing
-    });
-
-    //If you have multiple NLA tracks
-    //(e.g., one for "Idle" and one for "Walking") and you play them all at once using the code above, they might look messy.
-    //If you only want one specific animation to play, replace the ".forEach" (above this) part with:
-    //mixer.clipAction(gltf.animations[0]).play();
-    //(This plays only the first animation track found in the file.)
-
-    
-    // Optional: Center the model automatically
+    // Centering the model
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
-    model.position.sub(center); 
+    model.position.sub(center);
+
+    console.log("Model loaded successfully!");
+
 }, undefined, function (error) {
-    console.error('An error happened loading the model:', error);
+    console.error('Error loading model:', error);
 });
 
-// --- 5. POST-PROCESSING (VISUAL EFFECTS) ---
-// This acts like a filter layer over your scene.
+// --- 6. POST-PROCESSING ---
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
-// UnrealBloomPass makes bright areas "glow"
 const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight), 
-    0.5,  // Strength of glow
-    0.4,  // Radius
-    0.85  // Threshold (what brightness level starts glowing)
+    0.5, 0.4, 0.85
 );
 composer.addPass(bloomPass);
 
-// --- 6. THE ANIMATION LOOP ---
-// This runs 60 times per second to keep the image updated.
+// --- 7. ANIMATION LOOP ---
 function animate() {
     requestAnimationFrame(animate);
+    const delta = clock.getDelta();
 
-    // Calculate how much time has passed since the last frame
-    const delta = clock.getDelta(); 
-
-    // If the mixer exists, tell it to move the animation forward by that time
-    if (mixer) {
-        mixer.update(delta);
-    }
-
+    if (mixer) mixer.update(delta);
+    
     controls.update();
     composer.render();
 }
-// Handle window resizing (so it doesn't look stretched)
+
+// Window Resize
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
