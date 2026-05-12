@@ -67,11 +67,11 @@ robot.traverse((child) => {
     });
 
     // START ANIMATION: Change 'Run' to your exact NLA track name
-    if (actions['running']) {
-        currentAction = actions['running'];
+    if (actions['Running']) {
+        currentAction = actions['Running'];
         currentAction.play();
     } else {
-        console.warn("Animation 'running' not found. Check your NLA names!");
+        console.warn("Animation 'Running' not found. Check your NLA names!");
     }
 
 // animation bone
