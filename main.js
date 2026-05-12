@@ -118,14 +118,18 @@ function animate() {
     // 2. Override the bone rotation to follow the cursor
     // This happens AFTER the mixer so the mouse has the "last word"
     if (neckBone) {
-        const targetRotationX = -mouse.y * (rotationLimit * 0.5);
-        const targetRotationY = mouse.x * rotationLimit;
+    const home = neckBone.userData.homePos;
+    const movementRange = 1.5; // How many meters the "magnet" can move
 
-        // We use Quaternions to ensure the rotation is applied 
-        // even while the AnimationMixer is active.
-        const euler = new THREE.Euler(targetRotationX, targetRotationY, 0, 'XYZ');
-        neckBone.quaternion.setFromEuler(euler);
-    }
+    // Move the IK target based on mouse position
+    // Horizontal mouse (x) moves the bone on its X axis
+    // Vertical mouse (y) moves the bone on its Y axis
+    neckBone.position.x = home.x + (mouse.x * movementRange);
+    neckBone.position.y = home.y + (mouse.y * movementRange);
+
+    // Note: If the head moves forward/backward instead of left/right,
+    // you might need to change neckBone.position.x to neckBone.position.z
+}
 
     controls.update();
     composer.render();
