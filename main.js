@@ -54,16 +54,12 @@ loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
-    robot = model.getObjectByName('Robot');
     neckBone = model.getObjectByName('Bone'); 
 
-    // Save initial position for IK tracking
     if (neckBone) {
-       neckBone.userData.homePos = neckBone.position.clone();
-    
-    // THE "STOP FIGHTING" HACK:
-    // This tells the mixer to let us control the position manually.
-    neckBone.matrixAutoUpdate = true;
+        // We use .clone() to ensure 'homePos' is a STATIC snapshot 
+        // that doesn't change when the bone moves.
+        neckBone.userData.homePos = neckBone.position.clone();
     }
 
     // Animation Setup
@@ -103,27 +99,22 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    // Update NLA animations
+    // 1. Update animations (This moves the bone to the 'Run' pose)
     if (mixer) mixer.update(delta);
 
-    //test tracking
-    if (neckBone) console.log("Bone X:", neckBone.position.x.toFixed(2));
+    // 2. The Absolute Override
+    if (neckBone && neckBone.userData.homePos) {
+        const home = neckBone.userData.homePos;
+        const range = 1.5; 
 
-    // Update IK Bone position based on mouse
-if (neckBone && neckBone.userData.homePos) {
-    const home = neckBone.userData.homePos;
-    const range = 10.0; // Increased range to make movement obvious
+        // We use '=' to set the EXACT position, not '+=' 
+        // We are adding the mouse offset to the ORIGINAL home position only.
+        const targetX = home.x + (mouse.x * range);
+        const targetY = home.y + (mouse.y * range);
 
-    // SWAP TEST: Try using Z instead of Y
-    neckBone.position.x = home.x + (mouse.x * range);
-    neckBone.position.z = home.z + (mouse.y * range); 
-    
-    // We keep home.y static for now to see if it moves horizontally
-    neckBone.position.y = home.y; 
+        neckBone.position.set(targetX, targetY, home.z);
     }
 
     controls.update();
     composer.render();
 }
-
-animate();
