@@ -67,6 +67,13 @@ loader.load('/bot_running_a_1_nla_export_fix.glb', function (gltf) {
         const action = mixer.clipAction(clip);
         actions[clip.name] = action;
     });
+
+//check if it's separated
+    if (robot) {
+    console.log("Robot found!");
+} else {
+    console.warn("Robot not found! Check the name in Blender.");
+}
 //-----------------------------------------------------------------------------------------------------------------
     // 4. Start the default animation
     if (actions['Run']) {
