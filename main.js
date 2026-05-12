@@ -48,27 +48,54 @@ controls.enableDamping = true;
 // --- 5. THE LOADER (Importing the Robot) ---
 const loader = new GLTFLoader();
 
-// Use the filename exactly as it appears in GitHub
 loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
-    // Identify parts by Blender names
+    // 1. Identify parts by Blender names
     robot = model.getObjectByName('Robot');
     track = model.getObjectByName('Track');
     obstacle = model.getObjectByName('Obstacle');
 
-// --- BONE SELECTION ---
-// This is where you target the specific part of the skeleton
-neckBone = model.getObjectByName('Bone'); // <--- CHANGE BONE NAME HERE
+    // 2. Bone Selection (Targeting the part to follow the cursor)
+    neckBone = model.getObjectByName('Bone'); 
     
-    // --- THE EMISSIVE DIMMER SWITCH ---
-robot.traverse((child) => {
-    if (child.isMesh && child.material) {
-        // 0.0 is off, 1.0 is standard, 0.2 is very dim/subtle
-        child.material.emissiveIntensity = 3; 
+    // 3. Emissive Control (Adjusting the glow intensity)
+    if (robot) {
+        robot.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.emissiveIntensity = 3; 
+            }
+        });
     }
+
+    // 4. Animation Setup
+    mixer = new THREE.AnimationMixer(model);
+
+    // Store all animations in our actions dictionary
+    gltf.animations.forEach((clip) => {
+        actions[clip.name] = mixer.clipAction(clip);
+    });
+
+    // 5. Start the 'Running' Animation
+    if (actions['Running']) {
+        currentAction = actions['Running'];
+        currentAction.play();
+    } else {
+        console.warn("Animation 'Running' not found. Check your NLA names in Blender!");
+    }
+
+    // 6. Automatic Centering
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    model.position.sub(center);
+
+    console.log("Model loaded successfully and Bone identified!");
+
+}, undefined, function (error) {
+    console.error('Error loading model:', error);
 });
+
 // 1. Animation Setup
 mixer = new THREE.AnimationMixer(model);
 
