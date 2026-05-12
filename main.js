@@ -96,10 +96,10 @@ loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
     const center = box.getCenter(new THREE.Vector3());
     model.position.sub(center);
 
-    console.log("Robot and Bone ('" + (neckBone ? neckBone.name : "Not Found") + "') loaded!");
+ //   console.log("Robot and Bone ('" + (neckBone ? neckBone.name : "Not Found") + "') loaded!");
 
-}, undefined, function (error) {
-    console.error('Error loading model:', error);
+//}, undefined, function (error) {
+   // console.error('Error loading model:', error);
 });
 
 // --- 7. POST-PROCESSING (Bloom/Glow) ---
