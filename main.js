@@ -58,18 +58,26 @@ loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
-    // Identify main parts
     robot = model.getObjectByName('Robot');
     neckBone = model.getObjectByName('Bone'); 
 
-    // Adjust Glow Intensity (Emissive)
-    if (robot) {
-        robot.traverse((child) => {
-            if (child.isMesh && child.material) {
-                child.material.emissiveIntensity = 3; 
-            }
-        });
+    // --- THE CRITICAL FIX ---
+    if (neckBone) {
+        // Save a snapshot of the starting position so 'animate' has a reference
+        neckBone.userData.homePos = neckBone.position.clone();
     }
+
+    // ... (rest of your existing loader code for animations and centering)
+    mixer = new THREE.AnimationMixer(model);
+    gltf.animations.forEach((clip) => {
+        actions[clip.name] = mixer.clipAction(clip);
+    });
+    if (actions['Running']) actions['Running'].play();
+
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    model.position.sub(center);
+});
 
     // Animation Mixer Setup
     mixer = new THREE.AnimationMixer(model);
@@ -112,24 +120,17 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    // 1. Update the NLA animations first
     if (mixer) mixer.update(delta);
 
-    // 2. Override the bone rotation to follow the cursor
-    // This happens AFTER the mixer so the mouse has the "last word"
-    if (neckBone) {
-    const home = neckBone.userData.homePos;
-    const movementRange = 1.5; // How many meters the "magnet" can move
+    // Only run this if the bone is found AND the home position is saved
+    if (neckBone && neckBone.userData.homePos) {
+        const home = neckBone.userData.homePos;
+        const movementRange = 1.2; // Adjust this if the head moves too much/little
 
-    // Move the IK target based on mouse position
-    // Horizontal mouse (x) moves the bone on its X axis
-    // Vertical mouse (y) moves the bone on its Y axis
-    neckBone.position.x = home.x + (mouse.x * movementRange);
-    neckBone.position.y = home.y + (mouse.y * movementRange);
-
-    // Note: If the head moves forward/backward instead of left/right,
-    // you might need to change neckBone.position.x to neckBone.position.z
-}
+        // Move the IK target position
+        neckBone.position.x = home.x + (mouse.x * movementRange);
+        neckBone.position.y = home.y + (mouse.y * movementRange);
+    }
 
     controls.update();
     composer.render();
