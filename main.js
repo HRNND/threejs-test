@@ -104,12 +104,16 @@ function animate() {
     if (mixer) mixer.update(delta);
 
     // Update IK Bone position based on mouse
-    if (neckBone && neckBone.userData.homePos) {
-        const home = neckBone.userData.homePos;
-        const range = 1.2; 
+if (neckBone && neckBone.userData.homePos) {
+    const home = neckBone.userData.homePos;
+    const range = 2.0; // Increased range to make movement obvious
 
-        neckBone.position.x = home.x + (mouse.x * range);
-        neckBone.position.y = home.y + (mouse.y * range);
+    // SWAP TEST: Try using Z instead of Y
+    neckBone.position.x = home.x + (mouse.x * range);
+    neckBone.position.z = home.z + (mouse.y * range); 
+    
+    // We keep home.y static for now to see if it moves horizontally
+    neckBone.position.y = home.y; 
     }
 
     controls.update();
