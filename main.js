@@ -45,6 +45,13 @@ let actions = {};
 let currentAction;
 //-----------------------------------------------------------------------------------------------------------------
 // --- 4. IMPORTING THE 3D MODEL ---
+// Define these at the very top of your main.js (outside the loader) 
+// so other functions (like animate) can see them.
+let robot, track, obstacle, lighting, mixer;
+let actions = {};
+let currentAction;
+
+// --- 4. IMPORTING THE 3D MODEL ---
 const loader = new GLTFLoader();
 
 loader.load('/bot_running_a_1_nla_export_fix.glb', function (gltf) {
@@ -67,6 +74,16 @@ loader.load('/bot_running_a_1_nla_export_fix.glb', function (gltf) {
         const action = mixer.clipAction(clip);
         actions[clip.name] = action;
     });
+
+    // 4. Start the default animation
+    if (actions['Running']) {
+        currentAction = actions['running'];
+        currentAction.play();
+    }
+
+}, undefined, function (error) {
+    console.error('Error loading model:', error);
+});
 
 //check if it's separated
     if (robot) {
