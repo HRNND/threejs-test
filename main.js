@@ -8,10 +8,9 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 // --- 1. GLOBAL VARIABLES ---
 let mixer, robot, neckBone;
 let actions = {};
-let currentAction;
 const clock = new THREE.Clock();
 const mouse = new THREE.Vector2();
-const rotationLimit = 0.6; // Max rotation in radians (approx 34 degrees)
+const rotationLimit = 0.6; 
 
 // --- 2. SCENE SETUP ---
 const scene = new THREE.Scene();
@@ -24,14 +23,11 @@ renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 // --- 3. EVENT LISTENERS ---
-
-// Mouse Movement Tracker
 window.addEventListener('mousemove', (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
 
-// Window Resize Handler
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -61,57 +57,41 @@ loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
     robot = model.getObjectByName('Robot');
     neckBone = model.getObjectByName('Bone'); 
 
-    // --- THE CRITICAL FIX ---
+    // Save initial position for IK tracking
     if (neckBone) {
-        // Save a snapshot of the starting position so 'animate' has a reference
         neckBone.userData.homePos = neckBone.position.clone();
+        console.log("IK Bone identified and home position saved.");
     }
 
-    // ... (rest of your existing loader code for animations and centering)
-    mixer = new THREE.AnimationMixer(model);
-    gltf.animations.forEach((clip) => {
-        actions[clip.name] = mixer.clipAction(clip);
-    });
-    if (actions['Running']) actions['Running'].play();
-
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    model.position.sub(center);
-});
-
-    // Animation Mixer Setup
+    // Animation Setup
     mixer = new THREE.AnimationMixer(model);
     gltf.animations.forEach((clip) => {
         actions[clip.name] = mixer.clipAction(clip);
     });
 
-    // Start Running Animation
     if (actions['Running']) {
-        currentAction = actions['Running'];
-        currentAction.play();
+        actions['Running'].play();
     }
 
-    // Center the model in the scene
+    // Centering
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     model.position.sub(center);
 
- //   console.log("Robot and Bone ('" + (neckBone ? neckBone.name : "Not Found") + "') loaded!");
+    console.log("Model loaded successfully!");
 
-//}, undefined, function (error) {
-   // console.error('Error loading model:', error);
+}, undefined, function (error) {
+    console.error('Error loading model:', error);
 });
 
-// --- 7. POST-PROCESSING (Bloom/Glow) ---
+// --- 7. POST-PROCESSING ---
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
 const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight), 
-    0.2, // Strength
-    0.4, // Radius
-    0.85 // Threshold
+    0.2, 0.4, 0.85
 );
 composer.addPass(bloomPass);
 
@@ -120,21 +100,20 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
+    // Update NLA animations
     if (mixer) mixer.update(delta);
 
-    // Only run this if the bone is found AND the home position is saved
+    // Update IK Bone position based on mouse
     if (neckBone && neckBone.userData.homePos) {
         const home = neckBone.userData.homePos;
-        const movementRange = 1.2; // Adjust this if the head moves too much/little
+        const range = 1.2; 
 
-        // Move the IK target position
-        neckBone.position.x = home.x + (mouse.x * movementRange);
-        neckBone.position.y = home.y + (mouse.y * movementRange);
+        neckBone.position.x = home.x + (mouse.x * range);
+        neckBone.position.y = home.y + (mouse.y * range);
     }
 
     controls.update();
     composer.render();
 }
 
-// Start the loop
 animate();
