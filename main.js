@@ -40,7 +40,7 @@ controls.screenSpacePanning = true; // Allows vertical/horizontal panning
 
 // Define these at the very top of your main.js (outside the loader) 
 // so other functions (like animate) can see them.
-let robot, track, obstacle, lighting, mixer;
+let robot, track, obstacle, lighting;
 let actions = {};
 let currentAction;
 //-----------------------------------------------------------------------------------------------------------------
