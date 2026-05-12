@@ -41,11 +41,37 @@ controls.screenSpacePanning = true; // Allows vertical/horizontal panning
 // --- 4. IMPORTING THE 3D MODEL ---
 // Replace 'public/model.glb' with your actual file path.
 const loader = new GLTFLoader();
-loader.load('/robot_web.glb', function (gltf) {
+loader.load('/bot_running_a_1_NLA_export_Fix', function (gltf) {
     const model = gltf.scene;
     scene.add(model);
 
-// 1. Create the Mixer for this specific model
+// Separating the model
+    let robot, tube, mixer;
+let actions = {}; // A dictionary to hold our animations
+
+loader.load('bot_running_a_1_NLA_export_Fix', (gltf) => {
+    const model = gltf.scene;
+    scene.add(model);
+
+    // Find objects by the names you gave them in Blender
+    robot = model.getObjectByName('Robot');
+    track = model.getObjectByName('Track');
+    obstacle = model.getObjectByName('Obstacle');
+    lighting = model.getObjectByName('Lighting');
+
+    // Setup Animations
+    mixer = new THREE.AnimationMixer(robot);
+    gltf.animations.forEach((clip) => {
+        const action = mixer.clipAction(clip);
+        actions[clip.name] = action; // Store them: actions['Run'], actions['Jump']
+    });
+
+    // Start the game state
+    actions['Run'].play();
+});
+
+    
+// (ADDITIONAL) Create the Mixer for this specific model
     mixer = new THREE.AnimationMixer(model);
 
     // 2. Look at all the animations (NLA tracks) in the file
