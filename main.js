@@ -50,7 +50,7 @@ loader.load('bot_follow_cursor_a-9.glb', function (gltf) {
     // B. Find the actual bone that needs to rotate (Adjust name if needed, e.g., 'Neck')
     // We traverse to find the bone inside the Armature
     model.traverse((child) => {
-        if (child.isBone && (child.name === 'Neck' || child.name === 'Head')) {
+        if (child.isBone && (child.name === 'thigh.L.010')) {
             realNeckBone = child;
         }
     });
