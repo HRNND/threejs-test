@@ -40,16 +40,16 @@ controls.screenSpacePanning = true; // Allows vertical/horizontal panning
 
 // --- 4. IMPORTING THE 3D MODEL ---
 // Replace 'public/model.glb' with your actual file path.
-const loader = new GLTFLoader();
-loader.load('/bot_running_a_1_NLA_export_Fix.glb', function (gltf) {
-    const model = gltf.scene;
-    scene.add(model);
+//const loader = new GLTFLoader();
+//loader.load('/bot_running_a_1_NLA_export_Fix.glb', function (gltf) {
+  //  const model = gltf.scene;
+  //  scene.add(model);
 
 // Separating the model
     let robot, tube, mixer;
 let actions = {}; // A dictionary to hold our animations
 
-loader.load('bot_running_a_1_NLA_export_Fix.glb', (gltf) => {
+loader.load('bot_running_a_1_nla_export_fix.glb', (gltf) => {
     const model = gltf.scene;
     scene.add(model);
 
