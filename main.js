@@ -59,8 +59,11 @@ loader.load('bot_follow_cursor_a-8.glb', function (gltf) {
 
     // Save initial position for IK tracking
     if (neckBone) {
-        neckBone.userData.homePos = neckBone.position.clone();
-        console.log("IK Bone identified and home position saved.");
+       neckBone.userData.homePos = neckBone.position.clone();
+    
+    // THE "STOP FIGHTING" HACK:
+    // This tells the mixer to let us control the position manually.
+    neckBone.matrixAutoUpdate = true;
     }
 
     // Animation Setup
@@ -103,10 +106,13 @@ function animate() {
     // Update NLA animations
     if (mixer) mixer.update(delta);
 
+    //test tracking
+    if (neckBone) console.log("Bone X:", neckBone.position.x.toFixed(2));
+
     // Update IK Bone position based on mouse
 if (neckBone && neckBone.userData.homePos) {
     const home = neckBone.userData.homePos;
-    const range = 2.0; // Increased range to make movement obvious
+    const range = 10.0; // Increased range to make movement obvious
 
     // SWAP TEST: Try using Z instead of Y
     neckBone.position.x = home.x + (mouse.x * range);
